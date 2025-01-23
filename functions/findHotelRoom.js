@@ -1,4 +1,5 @@
 const fetch = require('node-fetch');
+const { formatAddress } = require('./utils/addressFormatter');
 
 async function generateAmadeusAccessToken() {
     console.log('\n--- Generating Amadeus Access Token ---');
@@ -51,10 +52,14 @@ async function findHotelRoom(functionArgs) {
         console.log('\n--- Starting Hotel Room Search ---');
         console.log('Input city:', cityName);
         
+        // Format the address using the utility function
+        const formattedAddress = formatAddress(cityName);
+        console.log('Formatted address:', formattedAddress);
+        
         // First, geocode the city using geocode.maps.co with API key
         console.log('\nMaking geocoding request...');
         const API_KEY = process.env.GEO_CODING_API_KEY;
-        const geocodeUrl = `https://geocode.maps.co/search?q=${encodeURIComponent(cityName)}&api_key=${API_KEY}`;
+        const geocodeUrl = `https://geocode.maps.co/search?q=${encodeURIComponent(formattedAddress)}&api_key=${API_KEY}`;
         console.log('Geocoding URL:', geocodeUrl.replace(API_KEY, 'HIDDEN'));
         
         const geocodeResponse = await fetch(geocodeUrl);

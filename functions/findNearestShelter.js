@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
 const fs = require('fs');
 const csv = require('csv-parse/sync');
+const { formatAddress } = require('./utils/addressFormatter');
 
 // Helper function to calculate distance between two points using Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -18,13 +19,17 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 async function findNearestShelter(functionArgs) {
     const address = functionArgs.address;
     try {
-        console.log('\n--- Starting Nearest Shelter Search ---');
+        console.log('\n--- Starting Shelter Search ---');
         console.log('Input address:', address);
+        
+        // Format the address using the utility function
+        const formattedAddress = formatAddress(address);
+        console.log('Formatted address:', formattedAddress);
         
         // First, geocode the address using geocode.maps.co
         console.log('\nMaking geocoding request...');
         const API_KEY = process.env.GEO_CODING_API_KEY;
-        const geocodeUrl = `https://geocode.maps.co/search?q=${encodeURIComponent(address)}&api_key=${API_KEY}`;
+        const geocodeUrl = `https://geocode.maps.co/search?q=${encodeURIComponent(formattedAddress)}&api_key=${API_KEY}`;
         console.log('Geocoding URL:', geocodeUrl.replace(API_KEY, 'HIDDEN'));
         
         const geocodeResponse = await fetch(geocodeUrl);
