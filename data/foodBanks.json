@@ -1,0 +1,466 @@
+[
+  {
+    "county": "Alameda Community Food Bank",
+    "name": "7900 Edgewater Drive",
+    "address": "Oakland",
+    "city": "510-635-3663"
+  },
+  {
+    "county": "Second Harvest Food Bank of Orange",
+    "name": "8014 Marine Way",
+    "address": "Irvine",
+    "city": "949-653-2900"
+  },
+  {
+    "county": "Community Action Partnership of Orange",
+    "name": "11870 Monarch Street",
+    "address": "Garden Grove",
+    "city": "714-897-6670"
+  },
+  {
+    "county": "Food Bank of El Dorado",
+    "name": "4550 Business Drive",
+    "address": "Cameron Park",
+    "city": "530-621-9950"
+  },
+  {
+    "county": "Placer",
+    "name": "Placer Food Bank",
+    "address": "8284 Industrial Avenue",
+    "city": "Roseville",
+    "phone": "916-783-0481",
+    "coordinates": {
+      "lat": "38.7985846",
+      "lon": "-121.3078908"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Interfaith Council of Amador",
+    "name": "12181 Airport Road",
+    "address": "Jackson",
+    "city": "209-267-9006"
+  },
+  {
+    "county": "Riverside",
+    "name": "Second Harvest Food Bank",
+    "address": "2950-B Jefferson Street",
+    "city": "Riverside",
+    "phone": "951-359-4757",
+    "coordinates": {
+      "lat": "33.6941842",
+      "lon": "-116.2686308"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Community Action Agency of Butte",
+    "name": "2640 S. Fifth Avenue, Suite 7",
+    "address": "Oroville",
+    "city": "530-538-7559"
+  },
+  {
+    "county": "Sacramento",
+    "name": "Sacramento Food Bank and Family Services",
+    "address": "3333 3rd Ave.",
+    "city": "Sacramento",
+    "phone": "916-456-1980",
+    "coordinates": {
+      "lat": "38.551576",
+      "lon": "-121.468214"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Calaveras",
+    "name": "Resource Connection",
+    "address": "206 George Reed Drive",
+    "city": "San Andreas",
+    "phone": "209-754-1257",
+    "isProcessed": true
+  },
+  {
+    "county": "The Community Food Bank of San Benito",
+    "name": "1133 San Felipe Road",
+    "address": "Hollister",
+    "city": "831-637-0340"
+  },
+  {
+    "county": "Contra Costa",
+    "name": "Food Bank of Contra Costa & Solano",
+    "address": "4010 Nelson Avenue",
+    "city": "Concord",
+    "phone": "925-676-7543",
+    "coordinates": {
+      "lat": "38.0074891",
+      "lon": "-122.0447702"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Community Action Partnership of San Bernardino",
+    "name": "696 S. Tippecanoe Avenue",
+    "address": "San Bernardino",
+    "city": "909-723-1500"
+  },
+  {
+    "county": "Del Norte",
+    "name": "Rural Human Services, Inc.",
+    "address": "286 M Street Suite A",
+    "city": "Crescent City",
+    "phone": "707-464-7441",
+    "isProcessed": true
+  },
+  {
+    "county": "San Diego",
+    "name": "San Diego Food Bank",
+    "address": "9850 Distribution Avenue",
+    "city": "San Diego",
+    "phone": "858-527-1419",
+    "coordinates": {
+      "lat": "32.887",
+      "lon": "-117.164231"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Food Bank of El Dorado",
+    "name": "4550 Business Drive",
+    "address": "Cameron Park",
+    "city": "530-621-9950"
+  },
+  {
+    "county": "San Francisco",
+    "name": "San Francisco Food Bank",
+    "address": "900 Pennsylvania Avenue",
+    "city": "San Francisco",
+    "phone": "415-282-1907",
+    "coordinates": {
+      "lat": "37.754397499999996",
+      "lon": "-122.39350960467618"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Fresno",
+    "name": "Central California Food Bank",
+    "address": "4010 E Amendola Dr",
+    "city": "Fresno",
+    "phone": "559-237-3663",
+    "isProcessed": true
+  },
+  {
+    "county": "San Joaquin Human Services Agency",
+    "name": "2736 North Teepee Dr, Suite C",
+    "address": "Stockton",
+    "city": "209-468-0982"
+  },
+  {
+    "county": "Humboldt",
+    "name": "Food For People, Inc.",
+    "address": "307 West 14th Street",
+    "city": "Eureka",
+    "phone": "707-445-3166",
+    "coordinates": {
+      "lat": "40.794135",
+      "lon": "-124.1773258"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Food Bank Coalition of San Luis Obispo",
+    "name": "1180 Kendall Rd",
+    "address": "San Luis Obispo",
+    "city": "805-238-4664"
+  },
+  {
+    "county": "Imperial",
+    "name": "Imperial Valley Food Bank",
+    "address": "329 Applestill Road",
+    "city": "El Centro",
+    "phone": "760-370-0966",
+    "isProcessed": true
+  },
+  {
+    "county": "San Mateo",
+    "name": "Second Harvest Food Bank of Silicon Valley",
+    "address": "750 Curtner Avenue",
+    "city": "San Jose",
+    "phone": "408-266-8866",
+    "coordinates": {
+      "lat": "37.291695399999995",
+      "lon": "-121.87721863752097"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Inyo",
+    "name": "Inyo/Mono Advocates For Community Action",
+    "address": "137 East South Street",
+    "city": "Bishop",
+    "phone": "760-873-8557",
+    "coordinates": {
+      "lat": "37.358691",
+      "lon": "-118.389588"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Santa Barbara",
+    "name": "Food Bank of Santa Barbara",
+    "address": "4554 Hollister",
+    "city": "Santa Barbara",
+    "phone": "805-967-5741",
+    "isProcessed": true
+  },
+  {
+    "county": "Kern",
+    "name": "Community Action Partnership of Kern",
+    "address": "5005 Business Park N",
+    "city": "Bakersfield",
+    "phone": "661-336-5236",
+    "coordinates": {
+      "lat": "35.3613004",
+      "lon": "-119.0582882"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Santa Clara",
+    "name": "Second Harvest Food Bank of Silicon Valley",
+    "address": "750 Curtner Avenue",
+    "city": "San Jose",
+    "phone": "408-266-8866",
+    "coordinates": {
+      "lat": "37.291695399999995",
+      "lon": "-121.87721863752097"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Kings Community Action Organization",
+    "name": "1130 North 11th Avenue",
+    "address": "Hanford",
+    "city": "559-582-4386"
+  },
+  {
+    "county": "Santa Cruz",
+    "name": "Second Harvest Food Bank Serving Santa Cruz",
+    "address": "800 Ohlone Parkway",
+    "city": "Watsonville",
+    "phone": "831-722-7110",
+    "coordinates": {
+      "lat": "36.9142222",
+      "lon": "-121.7783987"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Lake",
+    "name": "Clearlake Gleaners, Inc.",
+    "address": "1896 Big Valley Road",
+    "city": "Finley",
+    "phone": "707-263-8082",
+    "coordinates": {
+      "lat": "39.0013167",
+      "lon": "-122.8754425"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Shasta",
+    "name": "Dignity Health Connected Living",
+    "address": "100 Mercy Oaks Drive",
+    "city": "Redding",
+    "phone": "530-226-3060",
+    "coordinates": {
+      "lat": "40.6169088",
+      "lon": "-122.3294861"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Siskiyou",
+    "name": "Great Northern Corporation",
+    "address": "310 Boles Street",
+    "city": "Weed",
+    "phone": "530-938-4115",
+    "coordinates": {
+      "lat": "41.4209877",
+      "lon": "-122.3813574"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Los Angeles",
+    "name": "Food Bank of Southern California",
+    "address": "1444 San Francisco Avenue",
+    "city": "Long Beach",
+    "phone": "562-435-3577",
+    "coordinates": {
+      "lat": "33.8143693",
+      "lon": "-118.203998"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Solano",
+    "name": "Food Bank of Contra Costa & Solano",
+    "address": "4010 Nelson Avenue",
+    "city": "Concord",
+    "phone": "925-676-7543",
+    "coordinates": {
+      "lat": "38.0074891",
+      "lon": "-122.0447702"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Madera Food Bank",
+    "name": "225 South Pine Street, Suite 101",
+    "address": "Madera",
+    "city": "559-674-1482"
+  },
+  {
+    "county": "Sonoma",
+    "name": "Redwood Empire Food Bank",
+    "address": "3990 Brickway Blvd.",
+    "city": "Santa Rosa",
+    "phone": "707-523-7900",
+    "coordinates": {
+      "lat": "38.513969149999994",
+      "lon": "-122.79256139905573"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Marin",
+    "name": "SF-Marin Food Bank",
+    "address": "75 Digital Drive",
+    "city": "Novato",
+    "phone": "415-883-1302",
+    "coordinates": {
+      "lat": "38.0704108",
+      "lon": "-122.5350278"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Stanislaus",
+    "name": "Salvation Army Modesto Citadel",
+    "address": "600 Janopaul Way",
+    "city": "Modesto",
+    "phone": "209-522-3209",
+    "isProcessed": true
+  },
+  {
+    "county": "Merced Food Bank, Inc",
+    "name": "2000 West Olive",
+    "address": "Merced",
+    "city": "209-726-3663"
+  },
+  {
+    "county": "Sutter",
+    "name": "Yuba/Sutter Gleaners Food Bank, Inc.",
+    "address": "760 Stafford Way",
+    "city": "Yuba City",
+    "phone": "530-673-3834",
+    "coordinates": {
+      "lat": "39.1446637",
+      "lon": "-121.6276727"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Mendocino",
+    "name": "fortbraggfoodbank.org",
+    "address": "910 North Franklin",
+    "city": "Fort Bragg",
+    "phone": "707-964-9404",
+    "coordinates": {
+      "lat": "39.4525649",
+      "lon": "-123.8045212"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Tehama Gleaners",
+    "name": "20699 Walnut Street",
+    "address": "Red Bluff",
+    "city": "530-529-2264"
+  },
+  {
+    "county": "Merced Food Bank, Inc",
+    "name": "2000 West Olive",
+    "address": "Merced",
+    "city": "209-726-3663"
+  },
+  {
+    "county": "Trinity Food Assistance Program",
+    "name": "9069 3rd Street",
+    "address": "Weaverville",
+    "city": "530-623-5409"
+  },
+  {
+    "county": "Foodlink for Tulare",
+    "name": "611 2nd St",
+    "address": "Exeter",
+    "city": "559-651-3663"
+  },
+  {
+    "county": "Mono",
+    "name": "Inyo/Mono Advocates For Community Action",
+    "address": "137 East South Street",
+    "city": "Bishop",
+    "phone": "760-873-8557",
+    "coordinates": {
+      "lat": "37.358691",
+      "lon": "-118.389588"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Tuolumne",
+    "name": "Amador/Tuolumne Community Action Agency, Inc.",
+    "address": "10590 State Hwy 88",
+    "city": "Jackson",
+    "phone": "209-223-1485",
+    "isProcessed": true
+  },
+  {
+    "county": "Food Bank for Monterey",
+    "name": "353 W Rossi St",
+    "address": "Salinas",
+    "city": "831-758-1523"
+  },
+  {
+    "county": "Food Share Inc. of Ventura",
+    "name": "4156 North Southbank Road",
+    "address": "Oxnard",
+    "city": "805-983-7100"
+  },
+  {
+    "county": "Napa",
+    "name": "Community Action of Napa Valley",
+    "address": "2521 Old Sonoma Rd",
+    "city": "Napa",
+    "phone": "707-253-6100",
+    "coordinates": {
+      "lat": "38.287675",
+      "lon": "-122.3015573"
+    },
+    "isProcessed": true
+  },
+  {
+    "county": "Food Bank of Yolo",
+    "name": "233 Harter Ave",
+    "address": "Woodland",
+    "city": "530-668-0690"
+  },
+  {
+    "county": "Food Bank of Nevada",
+    "name": "310 Railroad Ave #100",
+    "address": "Grass Valley",
+    "city": "530-272-3796"
+  }
+]

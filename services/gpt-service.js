@@ -22,13 +22,16 @@ class GptService extends EventEmitter {
     this.userContext = [
       { 'role': 'system', 'content': prompt },
       { 'role': 'system', 'content': userProfile },
-      { 'role': 'assistant', 'content': 'Hello! Welcome to Owl Shoes, how can I help you today?' },
+      { 'role': 'assistant', 'content': 'How can I help you today?' },
     ],
     this.partialResponseIndex = 0;
     this.isInterrupted = false;
     this.lastHotelSearch = 0;
     this.lastShelterSearch = 0;
     this.searchCooldown = 2000; // 2 seconds cooldown
+    this.lastUserInput = ''; // Store the last user input
+    this.lastInputTime = 0; // Store the timestamp of the last input
+    this.inputTimeout = 1000; // Wait 1 second for more input
 
     console.log(`GptService init with model: ${this.model}`);
   }
@@ -60,7 +63,7 @@ class GptService extends EventEmitter {
 
   updateUserContext(name, role, text) {
     if (name !== 'user') {
-      this.userContext.push({ 'role': role, 'name': name, 'content': text });
+      this.userContext.push({ 'role': 'function', 'name': name, 'content': text });
     } else {
       this.userContext.push({ 'role': role, 'content': text });
     }
@@ -68,6 +71,30 @@ class GptService extends EventEmitter {
 
   async completion(text, interactionCount, role = 'user', name = 'user') {
     console.log('GptService completion: ', role, name, text);
+    
+    // If this is user input, check if we should wait for more
+    if (role === 'user' && name === 'user') {
+      const now = Date.now();
+      
+      // If this is a continuation within the timeout window, accumulate it
+      if (now - this.lastInputTime < this.inputTimeout) {
+        this.lastUserInput += ' ' + text;
+        this.lastInputTime = now;
+        console.log('Accumulating input:', this.lastUserInput);
+        return; // Wait for more potential input
+      }
+      
+      // If we have accumulated input, use that instead
+      if (this.lastUserInput) {
+        text = this.lastUserInput + ' ' + text;
+        console.log('Using accumulated input:', text);
+      }
+      
+      // Reset for next time
+      this.lastUserInput = '';
+      this.lastInputTime = now;
+    }
+
     this.isInterrupted = false;
     this.updateUserContext(name, role, text);
 
@@ -84,6 +111,7 @@ class GptService extends EventEmitter {
     let functionNames = [];
     let functionArgs = '';
     let finishReason = '';
+    let hasSearchBeenCalled = false; // Track if a search has been called this turn
 
     function collectToolInformation(deltas) {
       let name = deltas.tool_calls[0]?.function?.name || '';
@@ -95,24 +123,15 @@ class GptService extends EventEmitter {
       if (args != '') {
         functionArgs += args;
       }
-      // Only log when we have a complete JSON object
-      if (args.endsWith('}')) {
-        try {
-          const parsedArgs = JSON.parse(functionArgs);
-          console.log('Tool arguments:', parsedArgs);
-        } catch (e) {
-          // Not a complete JSON object yet, skip logging
-        }
-      }
     }
 
     // Helper function to clean text for speech
     function cleanTextForSpeech(text) {
       return text
-        .replace(/\*\*/g, '') // Remove markdown bold
-        .replace(/\n+/g, '. ') // Replace newlines with periods
-        .replace(/:\s+/g, ': ') // Clean up colons
-        .replace(/\s+/g, ' ') // Remove extra spaces
+        .replace(/\*\*/g, '')
+        .replace(/\n+/g, '. ')
+        .replace(/:\s+/g, ': ')
+        .replace(/\s+/g, ' ')
         .trim();
     }
 
@@ -141,72 +160,95 @@ class GptService extends EventEmitter {
 
       if (finishReason === 'tool_calls') {
         const validatedArgsArray = this.validateFunctionArgs(functionArgs);
-        console.log(`validatedArgsArray is ${JSON.stringify(validatedArgsArray)}`);
-        let index = 0;
-        functionNames.forEach(async (functionName) => {
-          const functionToCall = availableFunctions[functionName];
-          let functionArgs = validatedArgsArray[index]
-          if (!functionArgs) {
-            console.error(`function args where undefined for ${index}, ${validatedArgsArray}, ${functionName}`)
-            return;
-          }
-          index=index+1;
-          console.log('validatedArgs', functionArgs);
-          const toolData = tools.find(tool => tool.function.name === functionName);
-          
-          // Check cooldown before emitting message or calling function
-          if (functionName === 'findHotelRoom' || functionName === 'findNearestShelter') {
-            const now = Date.now();
-            const lastSearch = functionName === 'findHotelRoom' ? this.lastHotelSearch : this.lastShelterSearch;
-            if (now - lastSearch < this.searchCooldown) {
-              console.log(`${functionName} cooldown active, skipping duplicate call`);
-              return;
-            }
-            if (functionName === 'findHotelRoom') {
-              this.lastHotelSearch = now;
-            } else {
-              this.lastShelterSearch = now;
-            }
-          }
+        
+        // Process all function calls at once
+        const searchFunctions = ['findHotelRoom', 'findNearestShelter', 'findNearestAnimalShelter'];
+        let hasSearchBeenCalled = false;
 
-          const say = toolData.function.say;
-          this.emit('gptreply', say, false, interactionCount);
-          
-          let functionResponse = await functionToCall(functionArgs);
-          this.emit('tools', functionName, functionArgs, functionResponse);
-          this.updateUserContext(functionName, 'function', functionResponse);
-          await this.completion(functionResponse, interactionCount, 'function', functionName);
-        })
+        for (let i = 0; i < functionNames.length; i++) {
+            const functionName = functionNames[i];
+            const functionArgs = validatedArgsArray[i];
+            
+            if (!functionArgs) {
+                console.error(`Invalid args for ${functionName}`);
+                continue;
+            }
+
+            const isSearchFunction = searchFunctions.includes(functionName);
+
+            if (isSearchFunction) {
+                if (hasSearchBeenCalled) {
+                    console.log(`Search already performed this turn, skipping ${functionName}`);
+                    continue;
+                }
+
+                const now = Date.now();
+                const lastSearch = functionName === 'findHotelRoom' ? this.lastHotelSearch : this.lastShelterSearch;
+                if (now - lastSearch < this.searchCooldown) {
+                    console.log(`${functionName} cooldown active, skipping`);
+                    continue;
+                }
+
+                if (functionName === 'findHotelRoom') {
+                    this.lastHotelSearch = now;
+                } else {
+                    this.lastShelterSearch = now;
+                }
+                hasSearchBeenCalled = true;
+            }
+
+            const functionToCall = availableFunctions[functionName];
+            const toolData = tools.find(tool => tool.function.name === functionName);
+            
+            if (role === 'user' && isSearchFunction) {
+                const say = toolData.function.say;
+                this.emit('gptreply', say, false, interactionCount);
+            }
+
+            let functionResponse = await functionToCall(functionArgs);
+            this.emit('tools', functionName, functionArgs, functionResponse);
+
+            if (isSearchFunction) {
+                if (functionName === 'findHotelRoom') {
+                    const hotelData = JSON.parse(functionResponse);
+                    const petFriendlyStatus = hotelData.isPetFriendly ? 
+                        "The hotel is pet-friendly and accepts pets. " : 
+                        "Unfortunately, this hotel does not accept pets. ";
+                    functionResponse = `I've found emergency accommodation at ${hotelData.hotelName} located at ${hotelData.address}. ${petFriendlyStatus}The room is a ${hotelData.bedType} room priced at ${hotelData.price} per night. This room is available for check-in on ${hotelData.checkIn}. Would you like me to send this information via text message for easy reference?`;
+                }
+                
+                this.updateUserContext(functionName, 'function', functionResponse);
+                await this.completion(functionResponse, interactionCount, 'function', functionName);
+                break;
+            } else {
+                this.updateUserContext(functionName, 'function', functionResponse);
+            }
+        }
       } 
       else {
         completeResponse += content;
         currentSentence += content;
 
-        // Check for natural breakpoints
         const breakpoints = ['. ', '! ', '? ', '\n', ': '];
         const hasBreakpoint = breakpoints.some(bp => content.includes(bp));
 
         if (hasBreakpoint) {
-          // Split on any breakpoint and handle each part
           let parts = currentSentence.split(/(?<=[\.\!\?\:\n])\s+/);
           
-          // Emit all complete parts except the last one
           for (let i = 0; i < parts.length - 1; i++) {
             emitCleanedSentence(parts[i], false);
           }
           
-          // Keep the last part if it's incomplete
           currentSentence = parts[parts.length - 1];
         }
 
         if (finishReason === 'stop') {
           emitCleanedSentence(currentSentence, true);
-          console.log('emit gptreply stop');
         }
       }
     }
     this.userContext.push({'role': 'assistant', 'content': completeResponse});
-    console.log(`GPT -> user context length: ${this.userContext.length}`.green);
+    console.log('Context updated');
   }
 }
 

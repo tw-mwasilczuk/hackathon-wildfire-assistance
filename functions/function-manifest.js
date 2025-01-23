@@ -56,30 +56,6 @@ const tools = [
   //     }
   //   },
   // },
-  {
-    type: 'function',
-    function: {
-      name: 'placeOrder',
-      say: 'All right, I\'m just going to ring that up in our system.',
-      description: 'Places an order for a set of shoes, after double confirmed with the customer.',
-      parameters: {
-        type: 'object',
-        properties: {
-          order: {
-            type: 'string',
-            description: 'The order summary including model of shoes, price, shipping method and information',
-          },
-          number: {
-            type: 'string',
-            description: 'The user phone number in E.164 format',
-          },
-        },
-        required: ['order', 'number'],
-      },
-     
-    },
-  },
-
   // {
   //   type: 'function',
   //   function: {
@@ -129,7 +105,6 @@ const tools = [
     function: {
       name: "changeLanguage",
       description: "Change the current conversation language to user preference, treat en-US, en-GB, es-ES, es-MX etc. as different languages.",
-      // say: 'Let me check the weather for you.',
       parameters: {
         type: "object",
         properties: {
@@ -144,7 +119,7 @@ const tools = [
     type: 'function',
     function: {
       name: "findHotelRoom",
-      description: "Find available hotel rooms in a specified city.",
+      description: "Find available hotel rooms in a specified city, with option to filter for pet-friendly hotels.",
       say: 'Let me search for available hotel rooms in that city.',
       parameters: {
         type: "object",
@@ -153,6 +128,11 @@ const tools = [
             type: "string", 
             description: "The name of the city to search for hotel rooms in." 
           },
+          petFriendly: {
+            type: "boolean",
+            description: "Whether to search specifically for pet-friendly hotels",
+            default: false
+          }
         },
         required: ["cityName"],
       },
@@ -198,6 +178,49 @@ const tools = [
         },
         required: ["address"],
       },
+    },
+  },
+
+  {
+    type: 'function',
+    function: {
+      name: "findNearestAnimalShelter",
+      description: "Find the nearest animal shelter that accepts either small animals (cats, dogs, etc.) or large animals (horses, livestock) based on the user's address and animal type.",
+      say: "I'll help you find the closest animal shelter that can accommodate your pets.",
+      parameters: {
+        type: "object",
+        properties: {
+          address: {
+            type: "string",
+            description: "The user's current address or location to find the nearest animal shelter from"
+          },
+          animalType: {
+            type: "string",
+            description: "The type of animal needing shelter: 'small' for cats/dogs/small pets, or 'large' for horses/livestock",
+            enum: ["small", "large"]
+          }
+        },
+        required: ["address", "animalType"]
+      },
+    },
+  },
+
+  {
+    type: 'function',
+    function: {
+      name: "findNearestFoodBank",
+      description: "Find the nearest food bank to a given address in California",
+      parameters: {
+        type: "object",
+        properties: {
+          address: {
+            type: "string",
+            description: "The address to find the nearest food bank to"
+          }
+        },
+        required: ["address"]
+      },
+      say: "Let me find the nearest food bank to that location."
     },
   },
 ];
