@@ -2,6 +2,7 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const csv = require('csv-parse/sync');
 const { formatAddress } = require('./utils/addressFormatter');
+const { addEvent } = require('../services/segment-service');
 
 // Helper function to calculate distance between two points using Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {
@@ -21,6 +22,18 @@ async function findNearestShelter(functionArgs) {
     try {
         console.log('\n--- Starting Shelter Search ---');
         console.log('Input address:', address);
+        
+        // Track shelter search in Segment
+        if (global.currentUserId) {
+            await addEvent({
+                userId: global.currentUserId,
+                event: 'Shelter Search',
+                properties: {
+                    address: address,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
         
         // Format the address using the utility function
         const formattedAddress = formatAddress(address);
@@ -91,9 +104,24 @@ async function findNearestShelter(functionArgs) {
         });
 
         if (!nearestShelter) {
-            return JSON.stringify({
+            const errorResponse = {
                 error: "I couldn't find any shelters in the database. Please try again later."
-            });
+            };
+            
+            // Track failed search
+            if (global.currentUserId) {
+                await addEvent({
+                    userId: global.currentUserId,
+                    event: 'Shelter Search Failed',
+                    properties: {
+                        address: address,
+                        reason: 'No shelters found',
+                        timestamp: new Date().toISOString()
+                    }
+                });
+            }
+            
+            return JSON.stringify(errorResponse);
         }
 
         // Format the distance
@@ -113,10 +141,38 @@ async function findNearestShelter(functionArgs) {
             suggestAlternatives: parseFloat(distanceMiles) > 50 // Flag to indicate if we should suggest hotels
         };
 
+        // Track successful shelter find
+        if (global.currentUserId) {
+            await addEvent({
+                userId: global.currentUserId,
+                event: 'Shelter Found',
+                properties: {
+                    searchAddress: address,
+                    shelterName: result.name,
+                    shelterAddress: result.address,
+                    distance: result.distance,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+
         console.log('Nearest shelter found:', JSON.stringify(result, null, 2));
         return JSON.stringify(result);
 
     } catch (error) {
+        // Track error
+        if (global.currentUserId) {
+            await addEvent({
+                userId: global.currentUserId,
+                event: 'Shelter Search Error',
+                properties: {
+                    address: address,
+                    error: error.message,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+
         console.error('Error in findNearestShelter:', error);
         return JSON.stringify({
             error: "I'm having trouble finding shelters right now. Please try again later."

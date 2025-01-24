@@ -7,10 +7,16 @@ const spaceID = process.env.SPACE_ID;
 const analytics = new Analytics({ writeKey: process.env.WRITE_KEY });
 
 const baseURL = 'https://profiles.segment.com/v1';
-// eslint-disable-next-line no-undef
+
+// Debug logging
+console.log('Profile Token:', profileToken);
+console.log('Space ID:', spaceID);
+console.log('Raw auth string:', `${profileToken}:`);
+
 const credentials = Buffer.from(`${profileToken}:`).toString('base64');
 const config = {
   headers: {
+    'Content-Type': 'application/json',
     Authorization: `Basic ${credentials}`,
   },
 };

@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 const { formatAddress } = require('./utils/addressFormatter');
+const { addEvent } = require('../services/segment-service');
 
 async function generateAmadeusAccessToken() {
     console.log('\n--- Generating Amadeus Access Token ---');
@@ -37,6 +38,19 @@ async function findHotelRoom(functionArgs) {
         console.log('\n--- Starting Hotel Room Search ---');
         console.log('Searching for hotels in:', cityName);
         
+        // Track hotel search in Segment
+        if (global.currentUserId) {
+            await addEvent({
+                userId: global.currentUserId,
+                event: 'Hotel Search',
+                properties: {
+                    city: cityName,
+                    petFriendly: !!functionArgs.petFriendly,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+
         // Format the address and geocode
         const formattedAddress = formatAddress(cityName);
         const API_KEY = process.env.GEO_CODING_API_KEY;
@@ -107,59 +121,103 @@ async function findHotelRoom(functionArgs) {
         });
 
         if (!hotelOffersResponse.ok) {
+            console.error('Hotel offers response not OK:', await hotelOffersResponse.text());
             return JSON.stringify({
                 error: "I'm having trouble finding hotel rooms right now. Please try again later."
             });
         }
 
         const hotelOffersData = await hotelOffersResponse.json();
-        console.log(`Found ${hotelOffersData.data?.length || 0} available hotels`);
+        console.log(`Found ${hotelOffersData.data?.length || 0} available hotels with offers`);
         
-        if (hotelOffersData.data && hotelOffersData.data.length > 0) {
-            const cheapestOffer = hotelOffersData.data[0];
-            const offer = cheapestOffer.offers[0];
-            
-            // Get address using reverse geocoding
-            const reverseGeocodeUrl = `https://geocode.maps.co/reverse?lat=${cheapestOffer.hotel.latitude}&lon=${cheapestOffer.hotel.longitude}&api_key=${API_KEY}`;
-            const reverseGeocodeResponse = await fetch(reverseGeocodeUrl);
-            let addressString = 'Address not available';
-            
-            if (reverseGeocodeResponse.ok) {
-                const reverseGeocodeData = await reverseGeocodeResponse.json();
-                if (reverseGeocodeData.address) {
-                    const addr = reverseGeocodeData.address;
-                    addressString = [
-                        addr.house_number,
-                        addr.road,
-                        addr.city || addr.town || addr.suburb,
-                        addr.state,
-                        addr.postcode
-                    ].filter(Boolean).join(', ');
-                } else if (reverseGeocodeData.display_name) {
-                    addressString = reverseGeocodeData.display_name;
-                }
-            }
-            
-            // Create the result object
-            const result = {
-                hotelName: cheapestOffer.hotel.name,
-                address: addressString,
-                price: `${offer.price.total} ${offer.price.currency}`,
-                roomType: offer.room.type,
-                bedType: offer.room.typeEstimated.bedType,
-                checkIn: checkInDate,
-                checkOut: checkOutDate,
-                isPetFriendly: functionArgs.petFriendly && cheapestOffer.hotel
-            };
-            
-            return JSON.stringify(result);
-        } else {
+        if (!hotelOffersData.data || hotelOffersData.data.length === 0) {
             return JSON.stringify({
                 error: `I couldn't find any available hotel rooms in ${cityName} for tonight. Would you like to try another city?`
             });
         }
 
+        const availableHotels = hotelOffersData.data.filter(hotel => 
+            hotel.offers && 
+            hotel.offers.length > 0 && 
+            hotel.offers[0].price && 
+            hotel.offers[0].room
+        );
+
+        if (availableHotels.length === 0) {
+            return JSON.stringify({
+                error: `I found hotels in ${cityName} but none have rooms available tonight. Would you like to try another city?`
+            });
+        }
+
+        const cheapestOffer = availableHotels[0];
+        const offer = cheapestOffer.offers[0];
+        
+        // Get address using reverse geocoding
+        const reverseGeocodeUrl = `https://geocode.maps.co/reverse?lat=${cheapestOffer.hotel.latitude}&lon=${cheapestOffer.hotel.longitude}&api_key=${API_KEY}`;
+        const reverseGeocodeResponse = await fetch(reverseGeocodeUrl);
+        let addressString = 'Address not available';
+        
+        if (reverseGeocodeResponse.ok) {
+            const reverseGeocodeData = await reverseGeocodeResponse.json();
+            if (reverseGeocodeData.address) {
+                const addr = reverseGeocodeData.address;
+                addressString = [
+                    addr.house_number,
+                    addr.road,
+                    addr.city || addr.town || addr.suburb,
+                    addr.state,
+                    addr.postcode
+                ].filter(Boolean).join(', ');
+            } else if (reverseGeocodeData.display_name) {
+                addressString = reverseGeocodeData.display_name;
+            }
+        }
+        
+        // Create the result object
+        const result = {
+            hotelName: cheapestOffer.hotel.name,
+            address: addressString,
+            price: `${offer.price.total} ${offer.price.currency}`,
+            roomType: offer.room.type,
+            bedType: offer.room.typeEstimated.bedType,
+            checkIn: checkInDate,
+            checkOut: checkOutDate,
+            isPetFriendly: functionArgs.petFriendly && cheapestOffer.hotel
+        };
+
+        // Track successful hotel find
+        if (global.currentUserId) {
+            await addEvent({
+                userId: global.currentUserId,
+                event: 'Hotel Found',
+                properties: {
+                    searchCity: cityName,
+                    hotelName: result.hotelName,
+                    hotelAddress: result.address,
+                    price: offer.price.total,
+                    currency: offer.price.currency,
+                    petFriendly: result.isPetFriendly,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+        
+        return JSON.stringify(result);
     } catch (error) {
+        // Track error
+        if (global.currentUserId) {
+            await addEvent({
+                userId: global.currentUserId,
+                event: 'Hotel Search Error',
+                properties: {
+                    city: cityName,
+                    error: error.message,
+                    petFriendly: !!functionArgs.petFriendly,
+                    timestamp: new Date().toISOString()
+                }
+            });
+        }
+
         console.error('Error in findHotelRoom:', error);
         return JSON.stringify({
             error: "I'm having trouble finding hotel rooms right now. Please try again later."

@@ -23,6 +23,7 @@ class GptService extends EventEmitter {
       { 'role': 'system', 'content': prompt },
       { 'role': 'system', 'content': userProfile },
       { 'role': 'assistant', 'content': 'How can I help you today?' },
+      { 'role': 'system', 'content': 'Keep responses brief and focused, ideally 1-2 short sentences. Wait for the user to finish speaking before providing detailed information.' },
     ],
     this.partialResponseIndex = 0;
     this.isInterrupted = false;
@@ -211,13 +212,64 @@ class GptService extends EventEmitter {
             if (isSearchFunction) {
                 if (functionName === 'findHotelRoom') {
                     const hotelData = JSON.parse(functionResponse);
-                    const petFriendlyStatus = hotelData.isPetFriendly ? 
-                        "The hotel is pet-friendly and accepts pets. " : 
-                        "Unfortunately, this hotel does not accept pets. ";
-                    functionResponse = `I've found emergency accommodation at ${hotelData.hotelName} located at ${hotelData.address}. ${petFriendlyStatus}The room is a ${hotelData.bedType} room priced at ${hotelData.price} per night. This room is available for check-in on ${hotelData.checkIn}. Would you like me to send this information via text message for easy reference?`;
+                    let hotelMessage = '';
+                    
+                    if (hotelData.error) {
+                        hotelMessage = hotelData.error;
+                    } else {
+                        const petFriendlyStatus = hotelData.isPetFriendly ? 
+                            "The hotel is pet-friendly and accepts pets. " : 
+                            "Unfortunately, this hotel does not accept pets. ";
+                            
+                        hotelMessage = `I've found emergency accommodation at ${hotelData.hotelName} located at ${hotelData.address}. ${petFriendlyStatus}The room is a ${hotelData.bedType} room priced at ${hotelData.price} per night. This room is available for check-in on ${hotelData.checkIn}.`;
+                        
+                        // Add a clear call to action
+                        hotelMessage += " Would you like me to send these details to your phone via text message?";
+                    }
+                    
+                    // Update the function response with our formatted message
+                    functionResponse = hotelMessage;
+                } else if (functionName === 'findNearestShelter' || functionName === 'findNearestAnimalShelter') {
+                    const shelterData = JSON.parse(functionResponse);
+                    let shelterMessage = '';
+                    
+                    if (shelterData.error) {
+                        shelterMessage = shelterData.error;
+                    } else {
+                        // Format distance message
+                        const distanceMsg = parseFloat(shelterData.distance) > 50 ? 
+                            `I've found a shelter, but it's quite far—about ${shelterData.distance} away in ${shelterData.city}, ${shelterData.state}` :
+                            `I've found a shelter ${shelterData.distance} away in ${shelterData.city}, ${shelterData.state}`;
+                        
+                        // Format services message
+                        const servicesMsg = `It's the ${shelterData.name}, which provides ${shelterData.services}`;
+                        
+                        // Format hours message
+                        const hoursMsg = `They're open ${shelterData.hours}`;
+                        
+                        // Format phone message
+                        const phoneMsg = `You can reach them at ${shelterData.phones.split(',')[0].trim()}`;
+                        
+                        // Combine messages
+                        shelterMessage = `${distanceMsg}. ${servicesMsg}. ${hoursMsg}. ${phoneMsg}.`;
+                        
+                        // Add alternatives suggestion if needed
+                        if (shelterData.suggestAlternatives) {
+                            shelterMessage += " Since this shelter is quite far, would you like me to help find a hotel room closer to your location? I can also send you the shelter information via text message for your records.";
+                        }
+                    }
+                    
+                    // Update the function response with our formatted message
+                    functionResponse = shelterMessage;
                 }
                 
+                // Always update context with the function response
                 this.updateUserContext(functionName, 'function', functionResponse);
+                
+                // For search functions, we want to immediately relay the response to the user
+                this.emit('gptreply', functionResponse, true, interactionCount);
+                
+                // Continue the conversation by having GPT process the search results
                 await this.completion(functionResponse, interactionCount, 'function', functionName);
                 break;
             } else {
