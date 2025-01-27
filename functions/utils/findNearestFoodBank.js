@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 const fs = require('fs').promises;
-const { formatAddress } = require('./utils/addressFormatter');
+const { formatAddress } = require('./addressFormatter');
 
 function calculateDistance(lat1, lon1, lat2, lon2) {
     const R = 6371; // Earth's radius in km

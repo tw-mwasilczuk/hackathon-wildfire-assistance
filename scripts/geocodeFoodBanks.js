@@ -490,4 +490,3 @@ fs.mkdir('data').catch(() => {});
 
 // Run the script
 processFoodBanks().catch(console.error); 
-processFoodBanks().catch(console.error); 

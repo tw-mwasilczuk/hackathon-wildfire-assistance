@@ -103,9 +103,10 @@ app.post('/incoming', async (req, res) => {
     const response = 
     `<Response>
       <Connect>
-        <ConversationRelay url="wss://${process.env.SERVER}/sockets" dtmfDetection="true" voice="${record.voice}" language="${record.language}" transcriptionProvider="${record.transcriptionProvider}">
+        <ConversationRelay url="wss://${process.env.SERVER}/sockets" dtmfDetection="true" voice="${record.voice}" language="${record.language}" transcriptionProvider="${record.transcriptionProvider}" speechRate="1.2">
           <Language code="fr-FR" ttsProvider="google" voice="fr-FR-Neural2-B" />
           <Language code="es-ES" ttsProvider="google" voice="es-ES-Neural2-B" />
+          <Voice name="en-US-Neural2-F" provider="google" style="empathetic" />
         </ConversationRelay>
       </Connect>
     </Response>`;
@@ -133,23 +134,27 @@ app.ws('/sockets', (ws) => {
       if (msg.type === 'setup') {
         addLog('convrelay', `convrelay socket setup ${msg.callSid}`);
         callSid = msg.callSid;        
+        
+        // Set phone number in GptService first
         gptService.setCallInfo('user phone number', msg.from);
         global.currentUserId = msg.from;
         let greetingSent = false;
 
         try {
+          // Get existing profile traits
           const userProfile = await getProfileTraits(msg.from);
           console.log('getProfileTraits: ', userProfile);
           
+          // Update user in Segment with phone number only on initial connection
           await upsertUser({ 
             userId: msg.from,
             anonymousId: msg.callSid,
             traits: { 
-              phoneNumber: msg.from,
-              ...userProfile
+              phoneNumber: msg.from
             }
           });
 
+          // Track call initiation
           await addEvent({
             userId: msg.from,
             event: 'Call Initiated',
@@ -159,31 +164,56 @@ app.ws('/sockets', (ws) => {
             }
           });
 
+          // Add existing user info to context if available
           if (userProfile) {
-            const name = userProfile.First_Name || userProfile.first_name;
-            if (name) {
+            // Use first_name consistently
+            const firstName = userProfile.first_name || userProfile.First_Name;
+            if (firstName) {
+              // Update to consistent casing if needed
+              if (userProfile.First_Name && !userProfile.first_name) {
+                await upsertUser({
+                  userId: msg.from,
+                  traits: {
+                    first_name: firstName
+                  }
+                });
+              }
               gptService.userContext.push({
                 'role': 'system',
-                'content': `The user's name is ${name}. Always address them by name in a friendly manner.`
+                'content': `The user's name is ${firstName}. Always address them by name in a friendly manner.`
               });
             }
             
-            if (userProfile.address) {
-              gptService.setCallInfo('user address', userProfile.address);
-              console.log('Found existing address:', userProfile.address);
+            // Use caller_address consistently
+            const address = userProfile.caller_address || userProfile.address || userProfile.Address;
+            if (address) {
+              // Update to consistent key if needed
+              if ((userProfile.address || userProfile.Address) && !userProfile.caller_address) {
+                await upsertUser({
+                  userId: msg.from,
+                  traits: {
+                    caller_address: address,
+                    address_updated_at: new Date().toISOString()
+                  }
+                });
+              }
+              gptService.setCallInfo('user address', address);
+              console.log('Found existing address:', address);
               gptService.userContext.push({ 
                 'role': 'system', 
-                'content': `The user has a previously stored address: "${userProfile.address}". Start by asking if they are still at this location.`
+                'content': `The user has a previously stored address: "${address}". Start by asking if they are still at this location.`
               });
             }
           }
 
           // Customize greeting based on available information
           let greeting;
-          if (userProfile?.First_Name) {
-            greeting = `Hello ${userProfile.First_Name}, I'm here to assist you during this challenging time. `;
-            if (userProfile.address) {
-              greeting += `Are you still at ${userProfile.address}?`;
+          if (userProfile?.first_name || userProfile?.First_Name) {
+            const name = userProfile.first_name || userProfile.First_Name;
+            greeting = `Hello ${name}, I'm here to assist you during this challenging time. `;
+            if (userProfile.caller_address || userProfile.address || userProfile.Address) {
+              const address = userProfile.caller_address || userProfile.address || userProfile.Address;
+              greeting += `Are you still at ${address}?`;
             } else {
               greeting += `Could you please confirm your current location?`;
             }
@@ -220,92 +250,60 @@ app.ws('/sockets', (ws) => {
             
             // Check for name in format "My name is [Name]" or similar patterns
             const namePatterns = [
-              /(?:my name is|i am|this is|i'm|call me) ([^,.]+)/i,
-              /([^,.]+) (?:here|speaking)/i
+                // Explicit spelled out name patterns - must start with clear name indicators
+                /^(?:my )?first name is ([a-z]\s+[a-z]\s+[a-z]\s+[a-z]\s+[a-z])(?:\s*,?\s*(?:and|last name is)\s+([a-z]\s+[a-z]\s+[a-z]\s+[a-z]\s+[a-z]\s+[a-z]\s+[a-z]\s+[a-z]\s+[a-z]))?/i,
+                // Regular name patterns - must have clear name indicators
+                /^(?:my name is|i am|this is|i'm|call me) ([^,.]+?)(?:\s+and|[,.]|$)/i,
+                /^([^,.]+?) (?:here|speaking)(?:\s+and|[,.]|$)/i
             ];
             
             let firstName, lastName;
+            let foundName = false;
+            
             for (const pattern of namePatterns) {
-              const match = input.match(pattern);
-              if (match) {
-                const fullName = match[1].trim().split(' ');
-                firstName = fullName[0].charAt(0).toUpperCase() + fullName[0].slice(1);
-                if (fullName.length > 1) {
-                  lastName = fullName.slice(1).map(word => 
-                    word.charAt(0).toUpperCase() + word.slice(1)
-                  ).join(' ');
+                const match = input.match(pattern);
+                if (match) {
+                    if (pattern.toString().includes('first name is')) {
+                        // Handle spelled out names
+                        firstName = match[1].replace(/\s+/g, '').toUpperCase();
+                        if (match[2]) {
+                            lastName = match[2].replace(/\s+/g, '').toUpperCase();
+                        }
+                        foundName = true;
+                    } else {
+                        // Handle regular names
+                        const fullName = match[1].trim();
+                        // Skip if the "name" looks like a location or action phrase
+                        if (/(?:at|in|to|going|gonna|traveling|with)\s+/i.test(fullName.toLowerCase())) {
+                            continue;
+                        }
+                        const nameParts = fullName.split(' ');
+                        firstName = nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1).toLowerCase();
+                        if (nameParts.length > 1) {
+                            lastName = nameParts.slice(1).map(word => 
+                                word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+                            ).join(' ');
+                        }
+                        foundName = true;
+                    }
+                    break;
                 }
-                break;
-              }
             }
-
-            // Check for address patterns
-            const addressPatterns = [
-              /(?:i(?:'|a)m at|i(?:'|a)m in|at|located at|address is|staying at) ([^.]+)/i,
-              /([0-9]+[^,.]+(?:street|st|avenue|ave|road|rd|boulevard|blvd|lane|ln|drive|dr)[^,.]*)/i,
-              /([^,.]+(?:street|st|avenue|ave|road|rd|boulevard|blvd|lane|ln|drive|dr)[^,.]*)/i
-            ];
-
-            let address;
-            for (const pattern of addressPatterns) {
-              const match = input.match(pattern);
-              if (match) {
-                address = match[1].trim();
-                // Capitalize first letter of each word in address
-                address = address.split(' ').map(word => 
-                  word.charAt(0).toUpperCase() + word.slice(1)
-                ).join(' ');
-                break;
-              }
-            }
-
-            // Update user profile if we found new information
-            if ((firstName || address) && global.currentUserId) {
-              const updateTraits = {
-                userId: global.currentUserId,
-                anonymousId: msg.callSid,
-                traits: {
-                  phoneNumber: global.currentUserId
-                }
-              };
-
-              if (firstName) {
-                updateTraits.traits.first_name = firstName;
-                if (lastName) {
-                  updateTraits.traits.last_name = lastName;
-                }
+            
+            // Update profile if name found
+            if (foundName) {
+                const traits = {};
+                if (firstName) traits.first_name = firstName;
+                if (lastName) traits.last_name = lastName;
                 
-                // Add name to GPT context for personalized responses
-                gptService.userContext.push({
-                  'role': 'system',
-                  'content': `The user's name is ${firstName}${lastName ? ' ' + lastName : ''}. Address them by their first name in responses.`
+                console.log('Updating user profile with name:', traits);
+                await upsertUser({
+                    userId: global.currentUserId,  // Use the stored userId
+                    traits: traits
                 });
-              }
-
-              if (address) {
-                updateTraits.traits.address = address;
-                updateTraits.traits.address_updated_at = new Date().toISOString();
                 
-                // Add address to GPT context for location-based services
-                gptService.setCallInfo('user address', address);
-              }
-
-              try {
-                await upsertUser(updateTraits);
-                console.log('Updated user profile:', updateTraits.traits);
-
-                // Track profile update
-                await addEvent({
-                  userId: global.currentUserId,
-                  event: 'Profile Updated',
-                  properties: {
-                    updated_fields: Object.keys(updateTraits.traits),
-                    timestamp: new Date().toISOString()
-                  }
-                });
-              } catch (error) {
-                console.error('Error updating user profile:', error);
-              }
+                const displayName = firstName + (lastName ? ' ' + lastName : '');
+                console.log('Updated user profile:', displayName);
             }
           } catch (error) {
             console.error('Error processing user input:', error);

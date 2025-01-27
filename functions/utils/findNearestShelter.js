@@ -1,8 +1,8 @@
 const fetch = require('node-fetch');
 const fs = require('fs');
 const csv = require('csv-parse/sync');
-const { formatAddress } = require('./utils/addressFormatter');
-const { addEvent } = require('../services/segment-service');
+const { formatAddress } = require('./addressFormatter');
+const { addEvent } = require('../../services/segment-service');
 
 // Helper function to calculate distance between two points using Haversine formula
 function calculateDistance(lat1, lon1, lat2, lon2) {

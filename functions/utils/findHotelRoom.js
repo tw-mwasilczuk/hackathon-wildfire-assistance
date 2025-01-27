@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
-const { formatAddress } = require('./utils/addressFormatter');
-const { addEvent } = require('../services/segment-service');
+const { formatAddress } = require('./addressFormatter');
+const { addEvent } = require('../../services/segment-service');
 
 async function generateAmadeusAccessToken() {
     console.log('\n--- Generating Amadeus Access Token ---');
